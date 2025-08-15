@@ -1,0 +1,68 @@
+---
+title: "us_tilapia_imports"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+```
+```{r}
+#read in us_tilapia_imports
+us_tilapia_imports <- read_csv(here::here("data", "us_tilapia_imports.csv"))
+
+#visualize data
+summary(us_tilapia_imports)
+names(us_tilapia_imports)
+dim(us_tilapia_imports)
+skimr::skim(us_tilapia_imports)
+```
+
+```{r}
+#create a long dataframe
+long_us_tilapia_imports <- pivot_longer(data = us_tilapia_imports, values_to = "tilapia", cols = -country, names_to = "year")
+```
+
+```{r}
+us_tilapia_numeric <- long_us_tilapia_imports |> 
+  mutate(year = as.numeric(year)) #year = is telling it which column to save transformation to
+
+
+class(us_tilapia_numeric$year)
+```
+
+```{r}
+yearly_tilapia_tot <- us_tilapia_numeric |> 
+  dplyr::group_by(year) |> 
+  summarise(total_tilapia = sum(tilapia, na.rm = TRUE))
+```
+
+```{r}
+us_tilapia_imports_graph <- ggplot(data = yearly_tilapia_tot, aes(x = year, y = total_tilapia))+
+  geom_point()+
+  geom_line()+
+  labs(title = "Total Tilapia Imports", 
+       x = "Year", 
+       y = "Tilapia in Thousands of Pounds")
+
+print(us_tilapia_imports_graph)
+
+ggsave(here::here("figs", "us_tilapia_imports_graph.png"))
+```
+
+```{r}
+#filter down to ecuador, honduras, costa rica, and mexico
+ehcm <- data.frame(dplyr::filter(us_tilapia_numeric, country == c("Ecuador", "Honduras", "Costa Rica", "Mexico"))) 
+
+ehcm_graph <- ggplot(data = ehcm, aes(x = year, y = tilapia))+
+  geom_point()+
+  geom_line(aes(color = country))+
+  labs(title = "Tilapia Imports by Country", 
+       x = "Year", 
+       y = "Thousands of Pounnds")
+print(ehcm_graph)
+
+ggsave(here::here("figs", "ehcm_graph.jpg"))
+```
+
